@@ -4,7 +4,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>58d53c52-6350-425c-b2b8-1e0fba3108e0</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>DrugSynergyPrediction.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -21,7 +22,16 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="DrugSynergyPrediction.py" />
+    <Compile Include="general_functions.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="method_functions.py" />
+    <Compile Include="plot_functions.py" />
+    <Compile Include="preparation_functions.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="README.md" />
+    <Content Include="Synergy_workbook.ipynb" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in

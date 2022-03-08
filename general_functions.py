@@ -4,6 +4,9 @@ from scipy.stats import pearsonr
 
 def encodeNames(df):
     
+    '''A.k.a. One-hot encode
+    '''
+
     dfs = [pd.get_dummies(df.reset_index()[col]) for col in ['MODEL', 'DRUG1', 'DRUG2']]
     
     return dfs[0].join((dfs[1] + dfs[2]).fillna(0))
