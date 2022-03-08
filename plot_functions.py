@@ -9,6 +9,7 @@ from sklearn.cluster import KMeans
 
 from scipy.cluster.hierarchy import dendrogram, linkage
 import scipy.cluster.hierarchy as hierarchy
+from scipy.spatial.distance import pdist
 
 
 def plotDendrogramWithKnownPairs(Z, dfC, dfKS):
