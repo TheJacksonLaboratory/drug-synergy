@@ -20,6 +20,44 @@ def prepGDSC(whichGDSC, dir, fname='{}_fitted_dose_response_25Feb20.csv.gz'):
     return df_.groupby(level=[0, 1]).mean().sort_index()
 
 
+def loadAZchallengeIndex(se_synergy, dirAZpharmacol):
+    
+    def loadOne(fname):
+        
+        df = pd.read_csv(fname, delimiter=',', index_col=0)[['COMPOUND_A', 'COMPOUND_B']]
+        
+        df.loc[:, 'COMPOUND_A'] = df['COMPOUND_A'].str.lower()
+        df.loc[:, 'COMPOUND_B'] = df['COMPOUND_B'].str.lower()
+
+        df = df.set_index(['COMPOUND_A', 'COMPOUND_B'], append=True)
+        df.index.names = ['MODEL', 'DRUG1', 'DRUG2']
+
+        df_ = df.reorder_levels([0,2,1])
+        df_.index.names = df.index.names
+        df = pd.concat([df, df_], axis=0)
+        
+        index = df.index.unique().sort_values()
+
+        print(index.shape[0], fname)
+        
+        return index
+
+    se = se_synergy.copy()
+    se.iloc[:] = np.nan
+
+    se.loc[se.index.intersection(loadOne(dirAZpharmacol + 'ch1_train_combination_and_monotherapy.csv'))] = 'ch1_train'
+    se.loc[se.index.intersection(loadOne(dirAZpharmacol + 'ch1_test_monotherapy.csv'))] = 'ch1_test'
+    se.loc[se.index.intersection(loadOne(dirAZpharmacol + 'ch1_lb.csv'))] = 'ch1_leaderboard'
+    se.loc[se.index.intersection(loadOne(dirAZpharmacol + 'ch2_test_monotherapy.csv'))] = 'ch2_test'
+    se.loc[se.index.intersection(loadOne(dirAZpharmacol + 'ch2_lb.csv'))] = 'ch2_leaderboard'
+    
+    vc = se.value_counts()
+    print(vc.sum())
+    print(vc)
+    
+    return se
+
+
 def prepAZsensitivity(dir, fname='oi_combinations_synergy_scores_final.txt'):
 
     df_AZ = pd.read_csv(dir + fname, delimiter='\t', index_col=[0,1,2])
@@ -205,4 +243,26 @@ def prepDrugTargetsAZ(fname, fnameGenes):
     se_.name = 'TARGETS'
 
     return se_
+
+
+def prepareSubChallenge1(df, index_train_test, index_validate, encode=True):
+    
+    df_temp = df.loc[(~df['Cij'].isna()) & (~df['Sik'].isna()) & (~df['Sjk'].isna()) & (~df['SYNERGY_SCORE'].isna())]
+    #print('All with known pairs:\t', df_temp.shape[0])
+    
+    df_train_test = df_temp.loc[df_temp.reset_index('TISSUE').index.isin(index_train_test)]
+    print('Training-testing pairs:\t', df_train_test.shape[0])
+    
+    df_validate = df_temp.loc[df_temp.reset_index('TISSUE').index.isin(index_validate)]
+    print('Validation pairs:\t', df_validate.shape[0])
+    
+    if encode:
+        dfe_train_test = encodeNames(df_train_test)
+        dfe_train_test = dfe_train_test[dfe_train_test.columns.intersection(encodeNames(df_validate).columns)]
+        dfe_validate = encodeNames(df_validate).reindex(dfe_train_test.columns, axis=1).fillna(0.).astype(int)
+            
+        df_train_test.loc[:, dfe_train_test.columns] = dfe_train_test.values
+        df_validate.loc[:, dfe_validate.columns] = dfe_validate.values
+        
+    return df_train_test, df_validate
 
