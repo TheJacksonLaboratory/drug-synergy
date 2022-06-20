@@ -1,6 +1,6 @@
 # Documentation
 
-The ready-to-read documentation is available at https://decneo.readthedocs.io/.
+The ready-to-read documentation is available at https://acda.readthedocs.io/.
 The documentation of our software is built with [**Sphinx**](https://www.sphinx-doc.org/ "Sphinx") at 
 [**ReadTheDocs.org**](https://readthedocs.org/).
 

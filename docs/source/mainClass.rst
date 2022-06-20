@@ -1,31 +1,17 @@
-**Core class API**
-=============================================
+**Description of the API**
+==========================
 
-**Core module**
-
-.. container:: toggle
-
-    .. container:: header
-
-       **Description of the package functionality**
-
-    .. automodule:: decneo.analysisPipeline
-        :exclude-members: Analysis
-        :noindex:
-
-|
-|
-
-.. automethod:: decneo.analysisPipeline.process
-
-
-.. autoclass:: decneo.analysisPipeline.Analysis
+**Description of the main package functionality**
+-------------------------------------------------
+.. automodule:: acda.method_functions
     :members:
     :undoc-members:
     :show-inheritance:
 
+**Description of the auxiliary package functionality**
+------------------------------------------------------
 
-
-
-
-
+.. automodule:: acda.general_functions
+    :members:
+    :undoc-members:
+    :show-inheritance:

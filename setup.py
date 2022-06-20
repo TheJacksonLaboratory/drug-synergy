@@ -43,7 +43,6 @@ setup(
         'pandas>=1.0.1',
         'scipy>=1.4.1',
         'matplotlib>=3.1.3',
-        'scikit-learn>=0.22.1',
-        'networkx>=2.4'],
+        'scikit-learn>=0.22.1'],
     zip_safe=False
 )

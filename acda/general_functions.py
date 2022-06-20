@@ -5,7 +5,9 @@ import pymysql
 
 def encodeNames(df):
     
-    '''A.k.a. One-hot encode
+    '''A.k.a. One-hot encoding
+    ['MODEL', 'DRUG1', 'DRUG2'] should be present either in index levels or in the columns.
+    The idea is from the AstraZeneca DREAM challenge second-best winning method for drug synergy prediction.
     '''
 
     dfs = [pd.get_dummies(df.reset_index()[col]) for col in ['MODEL', 'DRUG1', 'DRUG2']]
