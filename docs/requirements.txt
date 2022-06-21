@@ -11,3 +11,4 @@ sklearn
 networkx
 xlrd>=1.0.0
 openpyxl
+jinja<3.0.1
