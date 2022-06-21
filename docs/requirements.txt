@@ -14,4 +14,4 @@ xlrd>=1.0.0
 openpyxl
 jinja2<=3.0.1
 sphinx-press-theme
-
+pymysql
