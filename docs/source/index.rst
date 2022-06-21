@@ -28,10 +28,9 @@ Contents
    overview
    gettingStarted
    mainClass
-   plotting
    data
    examples
-   outputData
+   plotting
 
 
 Indices and tables

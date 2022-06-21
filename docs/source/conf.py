@@ -45,7 +45,7 @@ def skip(app, what, name, obj, skip, options):
 
 # -- Project information -----------------------------------------------------
 
-project = 'acda'
+project = 'ACDA'
 copyright = '2022, S. Domanskyi, A. Srivastava'
 author = 'S. Domanskyi, A. Srivastava'
 
