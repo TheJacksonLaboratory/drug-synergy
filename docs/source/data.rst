@@ -42,7 +42,7 @@ Known synergy pairs
 The first three columns contain model identifier, and drugs identifiers. The last column is the synergy score, or, if unavailable, a binary value 1/0 to indicate synergy or no synergy between the pair of drugs.
 
 +-------+------------+--------------+---------------+
-| MODEL | DRUG1      | DRUG2        | SCORE         |
+| MODEL | DRUG1      | DRUG2        | SYNERGY_SCORE |
 +=======+============+==============+===============+
 | 5637  | cisplatin  | sunitinib    | 1             |
 +-------+------------+--------------+---------------+

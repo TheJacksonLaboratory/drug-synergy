@@ -10,7 +10,6 @@ from sklearn.linear_model import LogisticRegression, LinearRegression
 
 from .general_functions import encodeNames
 
-
 def getCDAdrugDistance(df_drugs_celllines, method='pearson'):
 
     '''Excludes pairs of points with missing data
@@ -48,7 +47,6 @@ def getCDAdrugDistance(df_drugs_celllines, method='pearson'):
     
     return dfC, Z
 
-
 def getDistanceAndSensitivityData(df, method='pearson', sensitivity_metric='LNIC50', drug='DRUG', lower=True):
     
     """ Sensitivity data and CDA drug distance
@@ -63,7 +61,6 @@ def getDistanceAndSensitivityData(df, method='pearson', sensitivity_metric='LNIC
     dfC, Z = getCDAdrugDistance(dfS, method=method)
 
     return dfC, dfS, Z
-
 
 def prepDfTa(df_drug_sensitivity, se_models_mutations, se_drug_targets, dname):
     
@@ -96,7 +93,6 @@ def prepDfTa(df_drug_sensitivity, se_models_mutations, se_drug_targets, dname):
     
     return dfTa
 
-
 def filter_synergy_pairs_list(df, dfTa, pref='Synergy pairs'):
     
     """
@@ -119,7 +115,6 @@ def filter_synergy_pairs_list(df, dfTa, pref='Synergy pairs'):
     print('%s out:\t' % pref, dfKS.shape[0])
     
     return df.loc[~df.index.duplicated()].reindex()
-
 
 def prepDfTas(dfTa, dfKS, se_tissue_annotation, tissue=None):
     
@@ -180,7 +175,6 @@ def prepDfTas(dfTa, dfKS, se_tissue_annotation, tissue=None):
 
     return dfTas[['SYNERGY_SCORE', 'Tijk']]
 
-
 def split_train_test_validate_predict(df, factor=1 / 2, random_state=None):
     
     print()
@@ -201,8 +195,7 @@ def split_train_test_validate_predict(df, factor=1 / 2, random_state=None):
     
     return df_train_test, df_validate, df_predict
 
-
-def makeCDAformattedData(tissue, se_drug_synergy, se_tissue_annotation, df_drug_sensitivity, se_models_mutations, se_drug_targets, synergy_cutoff, dataset, sensitivityMethod='cosine', sensitivity_metric='LNIC50', returnMore=False):
+def makeCDAformattedData(tissue, se_drug_synergy, se_tissue_annotation, df_drug_sensitivity, se_models_mutations, se_drug_targets, dataset, sensitivityMethod='cosine', sensitivity_metric='LNIC50', returnMore=False):
     
     dfC, dfS, Z = getDistanceAndSensitivityData(df_drug_sensitivity, method=sensitivityMethod, sensitivity_metric=sensitivity_metric)
     dfTa = prepDfTa(df_drug_sensitivity, se_models_mutations, se_drug_targets, dataset)
@@ -217,7 +210,6 @@ def makeCDAformattedData(tissue, se_drug_synergy, se_tissue_annotation, df_drug_
     
     return dfTas
 
-
 def prepareFromDCforCDA(df_DC, study, tissue, se_models_mutations, sample=None, random_state=None, sensitivity_measure='AUC', synergy='SYNERGY_ZIP', returnMore=False):
     o = se_models_mutations.index.intersection(df_DC.index.to_frame()['MODEL'].unique())
     df_temp = df_DC.loc[df_DC.index.to_frame()['MODEL'].isin(o)].xs(tissue, level='TISSUE', drop_level=False).xs(study, level='STUDY')
@@ -228,6 +220,53 @@ def prepareFromDCforCDA(df_DC, study, tissue, se_models_mutations, sample=None, 
     df_temp = df_temp[[synergy, '%s_DRUG1' % sensitivity_measure, '%s_DRUG2' % sensitivity_measure, 'DRUG1_TARGETS', 'DRUG2_TARGETS']]
     df_temp['MUTATIONS'] = se_models_mutations.loc[df_temp.index.get_level_values('MODEL')].values
     df_temp = df_temp.rename({synergy: 'SYNERGY_SCORE', '%s_DRUG1' % sensitivity_measure: 'Sik', '%s_DRUG2' % sensitivity_measure: 'Sjk'}, axis=1)
+    df_temp['Tijk'] = df_temp.apply(lambda s: len(np.intersect1d(s['DRUG1_TARGETS'] + s['DRUG2_TARGETS'], s['MUTATIONS']))>0, axis=1)
+    
+    assert df_temp.index.names==['MODEL', 'DRUG1', 'DRUG2', 'TISSUE'], 'Incorrect index levels names'
+    
+    df_temp_i = df_temp.reorder_levels([0,2,1,3])
+    df_temp_i.index.names = df_temp.index.names
+    
+    temp = df_temp_i['Sik'].copy()
+    df_temp_i['Sik'] = df_temp_i['Sjk'].copy()
+    df_temp_i['Sjk'] = temp
+    
+    temp = df_temp_i['DRUG1_TARGETS'].copy()
+    df_temp_i['DRUG1_TARGETS'] = df_temp_i['DRUG2_TARGETS'].copy()
+    df_temp_i['DRUG2_TARGETS'] = temp
+    
+    df_temp_i = pd.concat([df_temp, df_temp_i])
+    df_temp = df_temp_i.loc[~df_temp_i.index.duplicated()]
+    
+    se = pd.concat([df_temp.reset_index().set_index(['MODEL', 'DRUG1'])['Sik'], df_temp.reset_index().set_index(['MODEL', 'DRUG2'])['Sjk']], axis=0)
+    se.index.names = ['MODEL', 'DRUG']
+    df_drug_sensitivity = se.groupby(level=[0, 1]).agg(np.median).to_frame().rename({0: 'AUC'}, axis=1)
+    dfC, dfS, Z = getDistanceAndSensitivityData(df_drug_sensitivity, method='cosine', sensitivity_metric='AUC', lower=False)
+
+    df_temp['Cij'] = dfC.stack().reindex(pd.MultiIndex.from_frame(df_temp.index.to_frame()[['DRUG1', 'DRUG2']])).values
+    
+    df_temp = df_temp[['SYNERGY_SCORE', 'Tijk', 'Cij', 'Sik', 'Sjk']]
+
+    if returnMore:
+        return df_temp, dfC, dfS, Z
+    
+    return df_temp
+
+
+def prepareFromDCfull(df_temp, sample=None, random_state=None, returnMore=False):
+
+    try:
+        df_temp.columns = df_temp.columns.get_level_values(0)
+        index_cols = ['MODEL', 'DRUG1', 'DRUG2', 'TISSUE']
+        df_temp = df_temp.set_index(index_cols)
+    except Exception as exception:
+        print(exception)
+
+    if not sample is None:
+        df_temp = df_temp.sample(min(sample, df_temp.shape[0]), random_state=random_state)
+    
+    df_temp = df_temp[['SYNERGY_SCORE', 'SENSITIVITY_DRUG1', 'SENSITIVITY_DRUG2', 'DRUG1_TARGETS', 'DRUG2_TARGETS', 'MUTATIONS']]
+    df_temp = df_temp.rename({'SENSITIVITY_DRUG1': 'Sik', 'SENSITIVITY_DRUG2': 'Sjk'}, axis=1)
     df_temp['Tijk'] = df_temp.apply(lambda s: len(np.intersect1d(s['DRUG1_TARGETS'] + s['DRUG2_TARGETS'], s['MUTATIONS']))>0, axis=1)
     
     assert df_temp.index.names==['MODEL', 'DRUG1', 'DRUG2', 'TISSUE'], 'Incorrect index levels names'
@@ -318,7 +357,6 @@ def prepareFromAZforCDA(dir, se_tissue_annotation, se_models_mutations, se_drug_
 
     return df.sort_index()
 
-
 def trainOneTestAnother(df_one, df_another, n=10, n_sample=0.5):
 
     res_temp = dict()
@@ -350,7 +388,6 @@ def trainOneTestAnother(df_one, df_another, n=10, n_sample=0.5):
     df_temp2 = pd.concat([df_temp.groupby(level=0).mean(), df_temp.groupby(level=0).sem()], axis=1)
     
     return df_temp2, df_temp
-
 
 def fit_validate_predict(inData, inSynergy, extData=None, extSynergy=None, cv=None, max_iter=10**4, clf=None, **kwargs):
     
@@ -399,6 +436,17 @@ def fit_validate_predict(inData, inSynergy, extData=None, extSynergy=None, cv=No
     
     return clf
 
+def sample_train_predicted(df_G2, random_state, sample=100):
+    df_copy = df_G2.copy()
+    df_copy = df_copy.loc[~df_copy[['Tijk', 'Cij', 'Sik', 'Sjk']].isna().any(axis=1)]
+    df_copy.loc[df_copy[df_copy['SYNERGY_SCORE'].isna()].sample(sample, random_state=random_state).index, 'SYNERGY_SCORE'] = 0.
+    
+    df_train_test = df_copy[~df_copy['SYNERGY_SCORE'].isna()]
+    df_validate = df_copy[df_copy['SYNERGY_SCORE'].isna()]
+
+    clf = fit_validate_predict(df_train_test[['Tijk', 'Cij', 'Sik', 'Sjk']].values, df_train_test['SYNERGY_SCORE'].values, cv=None, clf=None)
+
+    return pd.Series(index=df_validate.index, data=clf.predict(df_validate[['Tijk', 'Cij', 'Sik', 'Sjk']].values))
 
 def tryExcept(func):
 
@@ -412,7 +460,6 @@ def tryExcept(func):
     internal.__doc__ = func.__doc__
 
     return internal
-
 
 @tryExcept
 def testCase(df_train_test, df_validate, CDA_features=['Tijk', 'Cij', 'Sik', 'Sjk'], encode=False, useAllFeatures=False, cv=10, clf=None):
@@ -448,7 +495,6 @@ def testCase(df_train_test, df_validate, CDA_features=['Tijk', 'Cij', 'Sik', 'Sj
         res.update({'ro': np.nan})
 
     return res
-
 
 def MonteCarloCrossValidation(dfTas, n=10, sample_non_synergy=False, sample_non_synergy_size=100, clf_for_CDA=LogisticRegression(), deidentify=False):
     
@@ -490,7 +536,6 @@ def MonteCarloCrossValidation(dfTas, n=10, sample_non_synergy=False, sample_non_
                          keys=['mean', 'sem'], axis=1).xs('val', level=1, axis=1)
     
     return df_temp2, df_temp1
-
 
 def downsampleRun(ra, dfTas=None, pref='temp', mid='temp', rep=10, basedir='output/', cv=None):
     

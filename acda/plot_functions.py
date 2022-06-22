@@ -49,7 +49,7 @@ def plotDendrogramWithKnownPairs(Z, dfC, dfKS):
     hierarchy.set_link_color_palette(None)
     matplotlib.rcParams['lines.linewidth'] = origLineWidth
 
-    return
+    return fig
 
 def plotHeatmapPredictedSynergy(dfC, Z, pvalues):
 
@@ -104,7 +104,7 @@ def plotHeatmapPredictedSynergy(dfC, Z, pvalues):
     hierarchy.set_link_color_palette(None)
     matplotlib.rcParams['lines.linewidth'] = origLineWidth
 
-    return
+    return fig
 
 def makeBarplotSingleDatasets(df_res_single, figsize=(10, 8), c=['green', 'navy', 'grey', 'crimson'], width=0.15, labelsAbove=False, saveName=None, dpi=300):
 

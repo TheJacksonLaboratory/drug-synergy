@@ -4,10 +4,12 @@
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
 data/
+scripts/data/
 dev/
 output/
 figures/
 docs/build/
+build/lib/
 dist/
 acda.egg-info/
 .ipynb_checkpoints/
