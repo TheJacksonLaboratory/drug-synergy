@@ -175,7 +175,7 @@ def prepDfTas(dfTa, dfKS, se_tissue_annotation, tissue=None):
 
     return dfTas[['SYNERGY_SCORE', 'Tijk']]
 
-def split_train_test_validate_predict(df, factor=1 / 2, random_state=None):
+def split_train_test_validate_predict(df, factor=1/2, random_state=None):
     
     print()
     print('All pairs:\t\t', df.shape[0])
@@ -183,8 +183,12 @@ def split_train_test_validate_predict(df, factor=1 / 2, random_state=None):
     
     df_temp = df.loc[(~df['Cij'].isna()) & (~df['Sik'].isna()) & (~df['Sjk'].isna()) & (~df['SYNERGY_SCORE'].isna())]
     print('All with known pairs:\t', df_temp.shape[0])
-    
-    df_train_test = df_temp.sample(n=int(df_temp.shape[0] * factor), random_state=random_state)
+
+    print('Sampling training pairs')
+    se_temp = pd.Series(df_temp.reset_index()[['MODEL', 'DRUG1', 'DRUG2']].apply(lambda s: s[0] + '_' + '_'.join(np.sort([s[1], s[2]])), axis=1))
+    ind_temp = pd.Index(se_temp).isin(pd.Series(se_temp.unique()).sample(n=int(pd.Series(se_temp.unique()).shape[0] * factor), random_state=random_state).values)
+    df_train_test = df_temp.loc[ind_temp]
+    #df_train_test = df_temp.sample(n=int(df_temp.shape[0] * factor), random_state=random_state)
     print('Training-testing pairs:\t', df_train_test.shape[0])
     
     df_validate = df_temp.loc[df_temp.index.difference(df_train_test.index)]
@@ -496,7 +500,7 @@ def testCase(df_train_test, df_validate, CDA_features=['Tijk', 'Cij', 'Sik', 'Sj
 
     return res
 
-def MonteCarloCrossValidation(dfTas, n=10, sample_non_synergy=False, sample_non_synergy_size=100, clf_for_CDA=LogisticRegression(), deidentify=False):
+def MonteCarloCrossValidation(dfTas, n=10, sample_non_synergy=False, sample_non_synergy_size=100, clf_for_CDA=LogisticRegression(), deidentify=False, factor=2/3):
     
     '''For continuous predictee: clf_for_CDA=LinearRegression()
     '''
@@ -510,7 +514,7 @@ def MonteCarloCrossValidation(dfTas, n=10, sample_non_synergy=False, sample_non_
         if sample_non_synergy:
             dfTas_copy.loc[dfTas_copy[dfTas_copy['SYNERGY_SCORE'].isna()].sample(sample_non_synergy_size, random_state=i).index, 'SYNERGY_SCORE'] = 0.
             
-        df_train_test, df_validate, df_predict = split_train_test_validate_predict(dfTas_copy, factor=2/3, random_state=i)
+        df_train_test, df_validate, df_predict = split_train_test_validate_predict(dfTas_copy, factor=factor, random_state=i)
         
         if deidentify:
             f = df_validate.index.to_frame()
