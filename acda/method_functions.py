@@ -62,7 +62,7 @@ def getDistanceAndSensitivityData(df, method='pearson', sensitivity_metric='LNIC
 
     return dfC, dfS, Z
 
-def prepDfTa(df_drug_sensitivity, se_models_mutations, se_drug_targets, dname):
+def prepDfTa(df_drug_sensitivity, se_models_mutations, se_drug_targets, dname, lower=True):
     
     """
     Drug targeting mutated genes
@@ -80,7 +80,10 @@ def prepDfTa(df_drug_sensitivity, se_models_mutations, se_drug_targets, dname):
 
         dfTa = pd.DataFrame(index=dfT.index, data=(dfT.values[:,None,:] + dfT.values[:,:,None]).reshape(dfT.shape[0],-1).astype(bool),
                             columns=pd.MultiIndex.from_product([dfT.columns, dfT.columns]))
-        dfTa.columns = pd.MultiIndex.from_arrays([dfTa.columns.get_level_values(0).str.lower().str.strip(), dfTa.columns.get_level_values(1).str.lower().str.strip()])
+        if lower:
+            dfTa.columns = pd.MultiIndex.from_arrays([dfTa.columns.get_level_values(0).str.lower().str.strip(), dfTa.columns.get_level_values(1).str.lower().str.strip()])
+        else:
+            dfTa.columns = pd.MultiIndex.from_arrays([dfTa.columns.get_level_values(0).str.strip(), dfTa.columns.get_level_values(1).str.strip()])
         if not os.path.exists(os.path.dirname(cacheFile)):
             os.makedirs(os.path.dirname(cacheFile))
         dfTa.to_pickle(cacheFile)
@@ -199,10 +202,10 @@ def split_train_test_validate_predict(df, factor=1/2, random_state=None):
     
     return df_train_test, df_validate, df_predict
 
-def makeCDAformattedData(tissue, se_drug_synergy, se_tissue_annotation, df_drug_sensitivity, se_models_mutations, se_drug_targets, dataset, sensitivityMethod='cosine', sensitivity_metric='LNIC50', returnMore=False):
+def makeCDAformattedData(tissue, se_drug_synergy, se_tissue_annotation, df_drug_sensitivity, se_models_mutations, se_drug_targets, dataset, sensitivityMethod='cosine', sensitivity_metric='LNIC50', returnMore=False, lower=True):
     
-    dfC, dfS, Z = getDistanceAndSensitivityData(df_drug_sensitivity, method=sensitivityMethod, sensitivity_metric=sensitivity_metric)
-    dfTa = prepDfTa(df_drug_sensitivity, se_models_mutations, se_drug_targets, dataset)
+    dfC, dfS, Z = getDistanceAndSensitivityData(df_drug_sensitivity, method=sensitivityMethod, sensitivity_metric=sensitivity_metric, lower=lower)
+    dfTa = prepDfTa(df_drug_sensitivity, se_models_mutations, se_drug_targets, dataset, lower=lower)
     dfTas = prepDfTas(dfTa, se_drug_synergy, se_tissue_annotation, tissue=tissue)
 
     dfTas['Cij'] = dfC.stack().reindex(pd.MultiIndex.from_frame(dfTas.index.to_frame()[['DRUG1', 'DRUG2']])).values
