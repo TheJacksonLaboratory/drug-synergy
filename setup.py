@@ -22,7 +22,7 @@ setup(
     author='S. Domanskyi, A. Srivastava',
     author_email='sergii.domanskyi@jax.org',
     license='MIT License',
-    url='https://github.com/sdomanskyi/acda',
+    url='https://github.com/TheJacksonLaboratory/drug-synergy',
     classifiers=[
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
