@@ -3,7 +3,7 @@ Welcome to ACDA documentation!
 
 .. image:: https://badgen.net/badge/Open%20Source/Yes/blue?icon=github
     :target: https://github.com/TheJacksonLaboratory/drug-synergy/
-.. image:: https://img.shields.io/github/release/TheJacksonLaboratory/acda.svg
+.. image:: https://img.shields.io/github/release/TheJacksonLaboratory/drug-synergy.svg
     :target: https://github.com/TheJacksonLaboratory/drug-synergy/releases
 .. image:: https://badge.fury.io/py/acda.svg
     :target: https://pypi.org/project/acda
