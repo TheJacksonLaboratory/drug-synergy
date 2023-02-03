@@ -178,7 +178,7 @@ def prepDfTas(dfTa, dfKS, se_tissue_annotation, tissue=None):
 
     return dfTas[['SYNERGY_SCORE', 'Tijk']]
 
-def split_train_test_validate_predict(df, factor=1/2, random_state=None):
+def split_train_test_validate_predict(df, factor=1/2, random_state=None, stratified=False):
     
     print()
     print('All pairs:\t\t', df.shape[0])
@@ -187,9 +187,15 @@ def split_train_test_validate_predict(df, factor=1/2, random_state=None):
     df_temp = df.loc[(~df['Cij'].isna()) & (~df['Sik'].isna()) & (~df['Sjk'].isna()) & (~df['SYNERGY_SCORE'].isna())]
     print('All with known pairs:\t', df_temp.shape[0])
 
-    print('Sampling training pairs')
-    se_temp = pd.Series(df_temp.reset_index()[['MODEL', 'DRUG1', 'DRUG2']].apply(lambda s: s[0] + '_' + '_'.join(np.sort([s[1], s[2]])), axis=1))
-    ind_temp = pd.Index(se_temp).isin(pd.Series(se_temp.unique()).sample(n=int(pd.Series(se_temp.unique()).shape[0] * factor), random_state=random_state).values)
+    if not stratified:
+        print('Sampling training pairs. Random')
+        se_temp = pd.Series(df_temp.reset_index()[['MODEL', 'DRUG1', 'DRUG2']].apply(lambda s: s[0] + '_' + '_'.join(np.sort([s[1], s[2]])), axis=1))
+        ind_temp = pd.Index(se_temp).isin(pd.Series(se_temp.unique()).sample(n=int(pd.Series(se_temp.unique()).shape[0] * factor), random_state=random_state).values)
+    else:
+        print('Sampling training pairs. Stratified by drug pairs')
+        se_temp = pd.Series(df_temp.reset_index()[['DRUG1', 'DRUG2']].apply(lambda s: '_'.join(np.sort([s[0], s[1]])), axis=1))
+        ind_temp = pd.Index(se_temp).isin(pd.Series(se_temp.unique()).sample(n=int(pd.Series(se_temp.unique()).shape[0] * factor), random_state=random_state).values)
+
     df_train_test = df_temp.loc[ind_temp]
     #df_train_test = df_temp.sample(n=int(df_temp.shape[0] * factor), random_state=random_state)
     print('Training-testing pairs:\t', df_train_test.shape[0])
@@ -487,7 +493,7 @@ def testCase(df_train_test, df_validate, CDA_features=['Tijk', 'Cij', 'Sik', 'Sj
             features = df_train_test.columns[~df_train_test.columns.isin(['SYNERGY_SCORE'] + CDA_features)]
     else:
         features = CDA_features
-        
+
     r, res = fit_validate_predict(df_train_test[features].values, df_train_test['SYNERGY_SCORE'].values,
                          extData=df_validate[features].values, extSynergy=df_validate['SYNERGY_SCORE'].values,
                          cv=cv, clf=clf)
@@ -503,7 +509,7 @@ def testCase(df_train_test, df_validate, CDA_features=['Tijk', 'Cij', 'Sik', 'Sj
 
     return res
 
-def MonteCarloCrossValidation(dfTas, n=10, sample_non_synergy=False, sample_non_synergy_size=100, clf_for_CDA=LogisticRegression(), deidentify=False, factor=2/3):
+def MonteCarloCrossValidation(dfTas, n=10, sample_non_synergy=False, sample_non_synergy_size=100, clf_for_CDA=LogisticRegression(), deidentify=False, factor=2/3, stratified=False):
     
     '''For continuous predictee: clf_for_CDA=LinearRegression()
     '''
@@ -517,7 +523,7 @@ def MonteCarloCrossValidation(dfTas, n=10, sample_non_synergy=False, sample_non_
         if sample_non_synergy:
             dfTas_copy.loc[dfTas_copy[dfTas_copy['SYNERGY_SCORE'].isna()].sample(sample_non_synergy_size, random_state=i).index, 'SYNERGY_SCORE'] = 0.
             
-        df_train_test, df_validate, df_predict = split_train_test_validate_predict(dfTas_copy, factor=factor, random_state=i)
+        df_train_test, df_validate, df_predict = split_train_test_validate_predict(dfTas_copy, factor=factor, random_state=i, stratified=stratified)
         
         if deidentify:
             f = df_validate.index.to_frame()
@@ -544,7 +550,7 @@ def MonteCarloCrossValidation(dfTas, n=10, sample_non_synergy=False, sample_non_
     
     return df_temp2, df_temp1
 
-def downsampleRun(ra, dfTas=None, pref='temp', mid='temp', rep=10, basedir='output/', cv=None):
+def downsampleRun(ra, dfTas=None, pref='temp', mid='temp', rep=10, basedir='output/', cv=None, stratified=False):
     
     '''df_sub10000 = downsampleRun(range(500, 10000, 500), dfTas=dfTas_AZ_breast, pref='', mid='AZ_breast')
     '''
@@ -559,7 +565,7 @@ def downsampleRun(ra, dfTas=None, pref='temp', mid='temp', rep=10, basedir='outp
             if not os.path.isfile(fname):
                 print(n, i)
                 res = dict()
-                df_train_test, df_validate, df_predict = split_train_test_validate_predict(dfTas, factor=2/3, random_state=i)
+                df_train_test, df_validate, df_predict = split_train_test_validate_predict(dfTas, factor=2/3, random_state=i, stratified=stratified)
 
                 df_train_test_sample = df_train_test.sample(n, random_state=i)
 
