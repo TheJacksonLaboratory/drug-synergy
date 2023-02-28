@@ -6,3 +6,5 @@
 0.0.3 Update of the train-test split function
 
 0.0.4 Minor code edits to allow to lowercase drug names in preparation functions
+
+0.0.5 Added stratified splitting for cross-validation, added method that averages predictions of ACDA and EN-ACDA
