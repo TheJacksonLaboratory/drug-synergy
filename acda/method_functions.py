@@ -389,13 +389,19 @@ def trainOneTestAnother(df_one, df_another, n=10, n_sample=0.5):
         print(dfTas2.shape)
 
         print('\n', 'M:')
-        res_temp[('EN', i)] = testCase(dfTas1, dfTas2, encode=True, useAllFeatures=False, cv=None)
+        res_temp[('EN', i)] = testCase(dfTas1, dfTas2, encode=True, useAllFeatures=False, cv=None)[0]
         print('\n', 'ACDA:')
-        res_temp[('ACDA', i)] = testCase(dfTas1, dfTas2, encode=False, useAllFeatures=False, cv=None)
+        res_temp[('ACDA', i)], df_A = testCase(dfTas1, dfTas2, encode=False, useAllFeatures=False, cv=None)
         print('\n', 'CDA:')
-        res_temp[('CDA', i)] = testCase(dfTas1, dfTas2, encode=False, useAllFeatures=False, cv=None, clf=LinearRegression())
+        res_temp[('CDA', i)] = testCase(dfTas1, dfTas2, encode=False, useAllFeatures=False, cv=None, clf=LinearRegression())[0]
         print('\n', 'EN-ACDA:')
-        res_temp[('EN-ACDA', i)] = testCase(dfTas1, dfTas2, encode=True, useAllFeatures=True, cv=None)
+        res_temp[('EN-ACDA', i)], df_B = testCase(dfTas1, dfTas2, encode=True, useAllFeatures=True, cv=None)
+
+        print('\n', 'ACDA and EN-ACDA averaged:')
+        df_AB = (df_A + df_B)/2.
+        av_score = np.round(pearsonr(df_AB['SYNERGY_SCORE'].astype(float), df_AB['Predicted'].astype(float))[0], 3)
+        res_temp[('ACDA-EN-ACDA', i)] = {'self': np.nan, 'cv_mean': np.nan, 'cv_std': np.nan, 'val': av_score, 'ro':  np.nan}
+        print(av_score)
 
     df_temp = pd.DataFrame(res_temp).T['val']
     df_temp2 = pd.concat([df_temp.groupby(level=0).mean(), df_temp.groupby(level=0).sem()], axis=1)
@@ -507,7 +513,7 @@ def testCase(df_train_test, df_validate, CDA_features=['Tijk', 'Cij', 'Sik', 'Sj
     except:
         res.update({'ro': np.nan})
 
-    return res
+    return res, df_ro
 
 def MonteCarloCrossValidation(dfTas, n=10, sample_non_synergy=False, sample_non_synergy_size=100, clf_for_CDA=LogisticRegression(), deidentify=False, factor=2/3, stratified=False):
     
@@ -532,16 +538,22 @@ def MonteCarloCrossValidation(dfTas, n=10, sample_non_synergy=False, sample_non_
             df_validate.index = pd.MultiIndex.from_frame(f)
 
         print('\n', 'ACDA:')
-        res_temp[('ACDA', i)] = testCase(df_train_test, df_validate, encode=False, useAllFeatures=False, cv=None)
+        res_temp[('ACDA', i)], df_A = testCase(df_train_test, df_validate, encode=False, useAllFeatures=False, cv=None)
         
         print('\n', 'CDA:')
-        res_temp[('CDA', i)] = testCase(df_train_test, df_validate, encode=False, useAllFeatures=False, cv=None, clf=LinearRegression())
+        res_temp[('CDA', i)] = testCase(df_train_test, df_validate, encode=False, useAllFeatures=False, cv=None, clf=LinearRegression())[0]
 
         print('\n', 'EN:')
-        res_temp[('EN', i)] = testCase(df_train_test, df_validate, encode=True, useAllFeatures=False, cv=None)
+        res_temp[('EN', i)] = testCase(df_train_test, df_validate, encode=True, useAllFeatures=False, cv=None)[0]
         
         print('\n', 'EN-ACDA:')
-        res_temp[('EN-ACDA', i)] = testCase(df_train_test, df_validate, encode=True, useAllFeatures=True, cv=None)
+        res_temp[('EN-ACDA', i)], df_B = testCase(df_train_test, df_validate, encode=True, useAllFeatures=True, cv=None)
+
+        print('\n', 'ACDA and EN-ACDA averaged:')
+        df_AB = (df_A + df_B)/2.
+        av_score = np.round(pearsonr(df_AB['SYNERGY_SCORE'].astype(float), df_AB['Predicted'].astype(float))[0], 3)
+        res_temp[('ACDA-EN-ACDA', i)] = {'self': np.nan, 'cv_mean': np.nan, 'cv_std': np.nan, 'val': av_score, 'ro':  np.nan}
+        print(av_score)
 
     df_temp1 = pd.DataFrame(res_temp).T.sort_index()
     df_temp2 = pd.concat([df_temp1.groupby(level=0).mean().round(3),
@@ -570,16 +582,16 @@ def downsampleRun(ra, dfTas=None, pref='temp', mid='temp', rep=10, basedir='outp
                 df_train_test_sample = df_train_test.sample(n, random_state=i)
 
                 print('\n', 'EN:')
-                res.update({('EN', n, i): testCase(df_train_test_sample, df_validate, encode=True, useAllFeatures=False, cv=None)})
+                res.update({('EN', n, i): testCase(df_train_test_sample, df_validate, encode=True, useAllFeatures=False, cv=None)[0]})
 
                 print('\n', 'ACDA:')
-                res.update({('ACDA', n, i): testCase(df_train_test_sample, df_validate, encode=False, useAllFeatures=False, cv=None)})
+                res.update({('ACDA', n, i): testCase(df_train_test_sample, df_validate, encode=False, useAllFeatures=False, cv=None)[0]})
 
                 print('\n', 'CDA:')
-                res.update({('CDA', n, i): testCase(df_train_test_sample, df_validate, encode=False, useAllFeatures=False, cv=None, clf=LinearRegression())})
+                res.update({('CDA', n, i): testCase(df_train_test_sample, df_validate, encode=False, useAllFeatures=False, cv=None, clf=LinearRegression())[0]})
 
                 print('\n', 'EN-ACDA:')
-                res.update({('EN-ACDA', n, i): testCase(df_train_test_sample, df_validate, encode=True, useAllFeatures=True, cv=None)})
+                res.update({('EN-ACDA', n, i): testCase(df_train_test_sample, df_validate, encode=True, useAllFeatures=True, cv=None)[0]})
 
                 with open(fname, 'wb') as outfile:
                     pickle.dump(res, outfile)

@@ -106,13 +106,14 @@ def plotHeatmapPredictedSynergy(dfC, Z, pvalues):
 
     return fig
 
-def makeBarplotSingleDatasets(df_res_single, figsize=(10, 8), c=['green', 'navy', 'grey', 'crimson'], width=0.15, labelsAbove=False, saveName=None, dpi=300):
+def makeBarplotSingleDatasets(df_res_single, figsize=(10, 8), c=['green', 'gold', 'navy', 'grey', 'crimson'], width=0.15, labelsAbove=False, saveName=None, dpi=300):
 
     oneax = None
     fig, ax = plt.subplots(figsize=figsize)
     for pos in np.arange(len(df_res_single)):
         df_temp = df_res_single.iloc[pos].unstack()
-        bpos = np.array([-width*6/4, -width*2/4, width*2/4, width*6/4])
+        bpos = np.array([-width*8/5, -width*4/5, width*0/5, width*4/5, width*8/5])
+        #bpos = np.array([-width*6/4, -width*2/4, width*2/4, width*6/4])
         bars = ax.bar(pos + bpos, df_temp['avg'].values, width, label=df_res_single.index[pos], yerr=df_temp['sem'].values, color=c, 
                       align='center', alpha=1.0, ecolor='black', capsize=2, edgecolor='w', linewidth=0.25)
         if oneax is None:
@@ -133,7 +134,7 @@ def makeBarplotSingleDatasets(df_res_single, figsize=(10, 8), c=['green', 'navy'
 
     ax.set_ylabel('Pearson corr. coef.', fontsize=16)
     ax.axhline(0, color='k', linewidth=0.5)
-    ax.legend(oneax, ['ACDA', 'CDA', 'EN', 'EN-ACDA'], frameon=False, loc='upper right', fontsize=12)
+    ax.legend(oneax, df_temp.index, frameon=False, loc='upper right', fontsize=12)
     ax.set_ylim([-0.1, 1.095])
     ax.tick_params(axis='y', labelsize=16)
 
@@ -144,13 +145,14 @@ def makeBarplotSingleDatasets(df_res_single, figsize=(10, 8), c=['green', 'navy'
     
     return fig
 
-def makeBarplotCrossDatasets(df_res_cross, figsize=(12, 7), c=['green', 'navy', 'grey', 'crimson'], width=0.15, labelsAbove=False, saveName=None, dpi=300):
+def makeBarplotCrossDatasets(df_res_cross, figsize=(12, 7), c=['green', 'gold', 'navy', 'grey', 'crimson'], width=0.15, labelsAbove=False, saveName=None, dpi=300):
 
     oneax = None
     fig, ax = plt.subplots(figsize=figsize)
     for pos in np.arange(len(df_res_cross)):
         df_temp = df_res_cross.iloc[pos].unstack()
-        bpos = np.array([-width*6/4, -width*2/4, width*2/4, width*6/4])
+        bpos = np.array([-width*8/5, -width*4/5, width*0/5, width*4/5, width*8/5])
+        #bpos = np.array([-width*6/4, -width*2/4, width*2/4, width*6/4])
         bars = ax.bar(pos + bpos, df_temp['avg'].values, width, label=df_res_cross.index[pos], yerr=df_temp['sem'].values, color=c, 
                       align='center', alpha=1.0, ecolor='black', capsize=2, edgecolor='w', linewidth=0.25)
         if oneax is None:
@@ -173,7 +175,7 @@ def makeBarplotCrossDatasets(df_res_cross, figsize=(12, 7), c=['green', 'navy', 
 
     ax.set_ylabel('Pearson corr. coef.', fontsize=16)
     ax.axhline(0, color='k', linewidth=0.5)
-    ax.legend(oneax, ['ACDA', 'CDA', 'EN', 'EN-ACDA'], frameon=False, loc='upper right', fontsize=12)
+    ax.legend(oneax, df_temp.index, frameon=False, loc='upper right', fontsize=12)
     ax.set_ylim([-0.3, 0.9])
     ax.tick_params(axis='y', labelsize=16)
 
