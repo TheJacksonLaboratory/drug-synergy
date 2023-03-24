@@ -408,6 +408,17 @@ def trainOneTestAnother(df_one, df_another, n=10, n_sample=0.5):
     
     return df_temp2, df_temp
 
+def averagePredictionPairs(se):
+    sei = se.copy()
+    temp = sei.index.to_frame().rename({'DRUG1': 'DRUG2', 'DRUG2': 'DRUG1'}, axis=1)
+    drug1, drug2 = temp['DRUG1'].values, temp['DRUG2'].values
+    temp['DRUG1'] = drug2
+    temp['DRUG2'] = drug1
+    sei.index = pd.MultiIndex.from_frame(temp)
+    sei = pd.concat([se, sei])
+    sei = sei.groupby(level=list(range(temp.columns.shape[0]))).mean()
+    return sei
+
 def fit_validate_predict(inData, inSynergy, extData=None, extSynergy=None, cv=None, max_iter=10**4, clf=None, **kwargs):
     
     if clf is None:
