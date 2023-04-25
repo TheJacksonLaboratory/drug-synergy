@@ -8,7 +8,7 @@ sphinxcontrib-images>=0.9.1
 autodocsumm>=0.1.13
 sphinx-tabs
 h5py
-sklearn
+scikit-learn
 networkx
 xlrd>=1.0.0
 openpyxl
